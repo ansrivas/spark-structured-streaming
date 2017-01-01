@@ -1,0 +1,35 @@
+version: '2'
+services:
+  zk4kafka_01:
+    image: confluentinc/cp-zookeeper:3.1.0
+    container_name: zk4kafka_01
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 33472
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: localhost:33477:33478
+    ports:
+    - "33472/tcp:33472/tcp"
+    restart: always
+  kafka_01:
+    image: confluentinc/cp-kafka:3.1.0
+    container_name: kafka_01
+    depends_on:
+      - zk4kafka_01
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zk4kafka_01:33472
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+    ports:
+    - "9092/tcp:9092/tcp"
+    restart: always
+  cas_01_test:
+    image: cassandra:2.1
+    ports:
+      - "9042/tcp:9042/tcp"
+      - "7199/tcp:7199/tcp"
+    container_name: cas_01_test
