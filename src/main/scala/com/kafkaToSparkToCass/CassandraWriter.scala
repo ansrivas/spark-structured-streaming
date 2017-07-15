@@ -1,9 +1,3 @@
-/**
-  * Copyright (C) Recogizer Group GmbH - All Rights Reserved
-  * Unauthorized copying of this file, via any medium is strictly prohibited
-  * Proprietary and confidential
-  * Created on 15.07.17.
-  */
 package com.kafkaToSparkToCass
 
 import com.datastax.spark.connector.cql.CassandraConnector
