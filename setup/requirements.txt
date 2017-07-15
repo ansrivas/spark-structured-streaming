@@ -1,1 +1,4 @@
-pykafka
+Faker==0.7.11
+pykafka==2.5.0
+arrow==0.10.0
+avro-python3==1.8.1

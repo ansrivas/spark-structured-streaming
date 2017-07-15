@@ -1,0 +1,9 @@
+{"namespace": "com.ansrivas.userdata.avro",
+ "type": "record",
+ "name": "userdata",
+ "fields": [
+     {"name": "user_id", "type": ["string", "null"]},
+     {"name": "timestamp",  "type": ["string", "null"]},
+     {"name": "event_id",  "type": ["string", "null"]}
+ ]
+}
