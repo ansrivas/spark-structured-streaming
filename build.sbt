@@ -6,6 +6,27 @@ scalaVersion := "2.11.8"
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+resolvers += Resolver.sonatypeRepo("releases")
+
+addCompilerPlugin("org.wartremover" %% "wartremover" % "2.1.1")
+
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-encoding",
+  "UTF-8",
+  "-feature",
+  "-target:jvm-1.8",
+  "-unchecked",
+  "-Xfatal-warnings",
+  "-Xfuture",
+  "-Xlint",
+  "-Ydelambdafy:method",
+  "-Yno-adapted-args",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-unused-import",
+  "-Ywarn-value-discard"
+)
+
 libraryDependencies ++= {
   val sparkV = "2.2.0"
   val cassandraV = "2.0.0-M3"

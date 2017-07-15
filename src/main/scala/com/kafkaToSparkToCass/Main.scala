@@ -3,37 +3,16 @@ package com.kafkaToSparkToCass
 /**
   * Created by ankur on 18.12.16.
   */
-import java.sql.Timestamp
-import java.text.{DateFormat, SimpleDateFormat}
-
-import com.datastax.driver.core.Session
-import java.io.ByteArrayInputStream
-
-import collection.JavaConversions._
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
-import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.writer.CassandraRowWriter
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.functions.explode
-import org.apache.avro.Schema
-import org.apache.avro.generic.GenericRecord
-import org.apache.avro.io.DecoderFactory
-import org.apache.avro.specific.SpecificDatumReader
-import org.apache.kafka.common.serialization.{
-  ByteArrayDeserializer,
-  StringDeserializer
-}
-import org.apache.spark
 
-import scala.io.Source
+import org.apache.spark.sql.{SparkSession}
 
 object Main {
 
   private val logger = Logger.getLogger(this.getClass)
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     Logger.getLogger("org").setLevel(Level.INFO)
     Logger.getLogger("akka").setLevel(Level.INFO)

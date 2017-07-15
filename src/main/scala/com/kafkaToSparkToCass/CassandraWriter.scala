@@ -11,19 +11,21 @@ class CassandraWriter(sparkSession: SparkSession) extends Serializable {
     connector.withSessionDo { session =>
       Statements.createKeySpaceAndTable(session, true)
     }
+    ()
   }
 
-  private def processRow(value: Commons.UserEvent) = {
+  private def processRow(value: Commons.UserEvent): Unit = {
     connector.withSessionDo { session =>
       session.execute(Statements.cql(value.user_id, value.time, value.event))
     }
+    ()
   }
 
   //     This Foreach sink writer writes the output to cassandra.
   import org.apache.spark.sql.ForeachWriter
   val writer = new ForeachWriter[Commons.UserEvent] {
     override def open(partitionId: Long, version: Long) = true
-    override def process(value: Commons.UserEvent) = {
+    override def process(value: Commons.UserEvent): Unit = {
       processRow(value)
     }
     override def close(errorOrNull: Throwable) = {}
