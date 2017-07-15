@@ -20,6 +20,9 @@
   * Go to cqlsh `docker exec -it cas_01_test cqlsh localhost`
   * And then run `select * from my_keyspace.test_table  ;`
 
+8. Another branch [avro-example](https://github.com/ansrivas/spark-structured-streaming/tree/avro-example) contains avro deserialization code.
+
+
 Credits:
 
 * This repository has borrowed some snippets from [killrweather](https://github.com/killrweather/killrweather) app.
