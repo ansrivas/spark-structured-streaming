@@ -7,12 +7,26 @@ import java.sql.Timestamp
 import java.text.{DateFormat, SimpleDateFormat}
 
 import com.datastax.driver.core.Session
+import java.io.ByteArrayInputStream
 
 import collection.JavaConversions._
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.functions.udf
+import org.apache.spark.sql.functions.explode
+import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
+import org.apache.avro.io.DecoderFactory
+import org.apache.avro.specific.SpecificDatumReader
+import org.apache.kafka.common.serialization.{
+  ByteArrayDeserializer,
+  StringDeserializer
+}
+import org.apache.spark
+
+import scala.io.Source
 
 object Main {
 
@@ -33,12 +47,20 @@ object Main {
     } catch {
       case ex: Exception =>
         logger.error(ex.getMessage)
+        logger.error(ex.printStackTrace())
     }
   }
 }
 
 class SparkJob extends Serializable {
   @transient lazy val logger = Logger.getLogger(this.getClass)
+  //read avro schema file
+  @transient lazy val schemaString =
+    Source.fromURL(getClass.getResource("/message.avsc")).mkString
+  // Initialize schema
+  @transient lazy val schema: Schema =
+    new Schema.Parser().parse(schemaString)
+  @transient lazy val reader = new SpecificDatumReader[GenericRecord](schema)
 
   logger.setLevel(Level.INFO)
   val sparkSession =
@@ -47,6 +69,7 @@ class SparkJob extends Serializable {
       .appName("kafka2Spark2Cassandra")
       .config("spark.cassandra.connection.host", "localhost")
       .getOrCreate()
+  println("Schema string, ", schemaString)
 
   val connector = CassandraConnector.apply(sparkSession.sparkContext.getConf)
 
@@ -61,36 +84,63 @@ class SparkJob extends Serializable {
     }
   }
 
+  val deserializer = udf { (input: Array[Byte]) =>
+    deserializeMessage(input)
+  }
+  def deserializeMessage(input: Array[Byte]): Commons.UserEvent = {
+    try {
+
+      val in = new ByteArrayInputStream(input)
+      val decoder = DecoderFactory.get.directBinaryDecoder(in, null)
+      val msg = reader.read(null, decoder)
+
+      Commons.UserEvent(msg.get("user_id").toString,
+                        Commons.getTimeStamp(msg.get("timestamp").toString),
+                        msg.get("event_id").toString)
+
+    } catch {
+      case e: Exception => null
+    }
+  }
+
   def runJob() = {
 
     logger.info("Execution started with following configuration")
-
     val cols = List("user_id", "time", "event")
 
     import sparkSession.implicits._
+
     val lines = sparkSession.readStream
       .format("kafka")
       .option("subscribe", "test.1")
       .option("kafka.bootstrap.servers", "localhost:9092")
       .option("startingOffsets", "latest")
       .load()
-      .selectExpr("CAST(value AS STRING)",
-                  "CAST(topic as STRING)",
-                  "CAST(partition as INTEGER)")
-      .as[(String, String, Integer)]
+//      .selectExpr("""deserializer($value) AS message""")
+//      .select($"value", $"topic")
+    //      .selectExpr("value",
+//                  "CAST(topic as STRING)",
+//                  "CAST(partition as INTEGER)")
+//      .selectExpr("CAST(value AS STRING)",
+//                  "CAST(topic as STRING)",
+//                  "CAST(partition as INTEGER)")
+//      .as[(String, String, Integer)]
 
-    val df =
-      lines.map { line =>
-        val columns = line._1.split(";") // value being sent out as a comma separated value "userid_1;2015-05-01T00:00:00;some_value"
-        (columns(0), Commons.getTimeStamp(columns(1)), columns(2))
-      }.toDF(cols: _*)
+    lines.printSchema()
+    val df = lines
+      .select($"value")
+      .withColumn("deserialized", deserializer($"value"))
+      .select($"deserialized")
 
     df.printSchema()
 
-    // Run your business logic here
-    val ds = df.select($"user_id", $"time", $"event").as[Commons.UserEvent]
+    val ds = df
+      .select($"deserialized.user_id",
+              $"deserialized.time",
+              $"deserialized.event")
+      .as[Commons.UserEvent]
 
-    // This Foreach sink writer writes the output to cassandra.
+//     This Foreach sink writer writes the output to cassandra.
     import org.apache.spark.sql.ForeachWriter
     val writer = new ForeachWriter[Commons.UserEvent] {
       override def open(partitionId: Long, version: Long) = true
