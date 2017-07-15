@@ -1,4 +1,4 @@
-#### This is an example of structured-streaming with latest Spark v2.1.0.
+#### This is an example of structured-streaming with latest Spark v2.2.0.
 ##### A spark job reads from Kafka topic, manipulates data as datasets/dataframes and writes to Cassandra.
 
 
