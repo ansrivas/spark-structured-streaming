@@ -116,15 +116,9 @@ class SparkJob extends Serializable {
       .option("kafka.bootstrap.servers", "localhost:9092")
       .option("startingOffsets", "latest")
       .load()
-//      .selectExpr("""deserializer($value) AS message""")
-//      .select($"value", $"topic")
-    //      .selectExpr("value",
-//                  "CAST(topic as STRING)",
-//                  "CAST(partition as INTEGER)")
-//      .selectExpr("CAST(value AS STRING)",
-//                  "CAST(topic as STRING)",
-//                  "CAST(partition as INTEGER)")
-//      .as[(String, String, Integer)]
+      .selectExpr("value",
+                  "CAST(topic as STRING)",
+                  "CAST(partition as INTEGER)")
 
     lines.printSchema()
     val df = lines
