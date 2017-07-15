@@ -7,8 +7,9 @@ scalaVersion := "2.11.8"
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= {
-  val sparkV = "2.1.0"
+  val sparkV = "2.2.0"
   val cassandraV = "2.0.0-M3"
+  val avroV = "1.8.1"
   Seq(
     "org.apache.spark" %% "spark-core" % sparkV,
     "org.apache.spark" %% "spark-streaming" % sparkV,
@@ -20,7 +21,8 @@ libraryDependencies ++= {
     "org.scalatest" %% "scalatest" % "3.0.0" % "test",
     "com.holdenkarau" %% "spark-testing-base" % "2.0.0_0.4.4",
     "com.datastax.cassandra" % "cassandra-driver-core" % "3.1.2",
-    "com.google.guava" % "guava" % "19.0"
+    "com.google.guava" % "guava" % "19.0",
+    "org.apache.avro" % "avro" % avroV
   )
 }
 
@@ -34,11 +36,11 @@ javaOptions ++= Seq("-Xms512M",
 mainClass in assembly := Some("com.kafkaToSparkToCass.Main")
 
 assemblyMergeStrategy in assembly := {
-  case m if m.toLowerCase.endsWith("manifest.mf") => MergeStrategy.discard
+  case m if m.toLowerCase.endsWith("manifest.mf")     => MergeStrategy.discard
   case m if m.toLowerCase.matches("meta-inf.*\\.sf$") => MergeStrategy.discard
-  case "log4j.properties" => MergeStrategy.discard
+  case "log4j.properties"                             => MergeStrategy.discard
   case m if m.toLowerCase.startsWith("meta-inf/services/") =>
     MergeStrategy.filterDistinctLines
   case "reference.conf" => MergeStrategy.concat
-  case _ => MergeStrategy.first
+  case _                => MergeStrategy.first
 }
