@@ -13,6 +13,7 @@ import collection.JavaConversions._
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.writer.CassandraRowWriter
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.functions.explode
@@ -34,10 +35,10 @@ object Main {
 
   def main(args: Array[String]) {
 
-    Logger.getLogger("org").setLevel(Level.WARN)
-    Logger.getLogger("akka").setLevel(Level.WARN)
-    Logger.getLogger("com.datastax").setLevel(Level.WARN)
-    Logger.getLogger("kafka").setLevel(Level.WARN)
+    Logger.getLogger("org").setLevel(Level.INFO)
+    Logger.getLogger("akka").setLevel(Level.INFO)
+    Logger.getLogger("com.datastax").setLevel(Level.INFO)
+    Logger.getLogger("kafka").setLevel(Level.INFO)
 
     logger.setLevel(Level.INFO)
 
@@ -54,13 +55,6 @@ object Main {
 
 class SparkJob extends Serializable {
   @transient lazy val logger = Logger.getLogger(this.getClass)
-  //read avro schema file
-  @transient lazy val schemaString =
-    Source.fromURL(getClass.getResource("/message.avsc")).mkString
-  // Initialize schema
-  @transient lazy val schema: Schema =
-    new Schema.Parser().parse(schemaString)
-  @transient lazy val reader = new SpecificDatumReader[GenericRecord](schema)
 
   logger.setLevel(Level.INFO)
   val sparkSession =
@@ -69,44 +63,14 @@ class SparkJob extends Serializable {
       .appName("kafka2Spark2Cassandra")
       .config("spark.cassandra.connection.host", "localhost")
       .getOrCreate()
-  println("Schema string, ", schemaString)
 
-  val connector = CassandraConnector.apply(sparkSession.sparkContext.getConf)
-
-  // Create keyspace and tables here, NOT in prod
-  connector.withSessionDo { session =>
-    Statements.createKeySpaceAndTable(session, true)
-  }
-
-  private def processRow(value: Commons.UserEvent) = {
-    connector.withSessionDo { session =>
-      session.execute(Statements.cql(value.user_id, value.time, value.event))
-    }
-  }
-
-  val deserializer = udf { (input: Array[Byte]) =>
-    deserializeMessage(input)
-  }
-  def deserializeMessage(input: Array[Byte]): Commons.UserEvent = {
-    try {
-
-      val in = new ByteArrayInputStream(input)
-      val decoder = DecoderFactory.get.directBinaryDecoder(in, null)
-      val msg = reader.read(null, decoder)
-
-      Commons.UserEvent(msg.get("user_id").toString,
-                        Commons.getTimeStamp(msg.get("timestamp").toString),
-                        msg.get("event_id").toString)
-
-    } catch {
-      case e: Exception => null
-    }
-  }
+  // Check this class thoroughly, it does some initializations which shouldn't be in PRODUCTION
+  // WARNING: go through this class properly.
+  @transient val cassWriter = new CassandraWriter(sparkSession)
 
   def runJob() = {
 
     logger.info("Execution started with following configuration")
-    val cols = List("user_id", "time", "event")
 
     import sparkSession.implicits._
 
@@ -121,9 +85,10 @@ class SparkJob extends Serializable {
                   "CAST(partition as INTEGER)")
 
     lines.printSchema()
+
     val df = lines
       .select($"value")
-      .withColumn("deserialized", deserializer($"value"))
+      .withColumn("deserialized", Deserializer.deser($"value"))
       .select($"deserialized")
 
     df.printSchema()
@@ -134,18 +99,11 @@ class SparkJob extends Serializable {
               $"deserialized.event")
       .as[Commons.UserEvent]
 
-//     This Foreach sink writer writes the output to cassandra.
-    import org.apache.spark.sql.ForeachWriter
-    val writer = new ForeachWriter[Commons.UserEvent] {
-      override def open(partitionId: Long, version: Long) = true
-      override def process(value: Commons.UserEvent) = {
-        processRow(value)
-      }
-      override def close(errorOrNull: Throwable) = {}
-    }
-
     val query =
-      ds.writeStream.queryName("kafka2Spark2Cassandra").foreach(writer).start
+      ds.writeStream
+        .queryName("kafka2Spark2Cassandra")
+        .foreach(cassWriter.writer)
+        .start
 
     query.awaitTermination()
     sparkSession.stop()
