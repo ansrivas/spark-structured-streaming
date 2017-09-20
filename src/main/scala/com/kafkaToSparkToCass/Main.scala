@@ -65,7 +65,6 @@ class SparkJob extends Serializable {
   def runJob() = {
 
     logger.info("Execution started with following configuration")
-
     val cols = List("user_id", "time", "event")
 
     import sparkSession.implicits._
