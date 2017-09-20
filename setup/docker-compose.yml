@@ -11,7 +11,7 @@ services:
       ZOOKEEPER_SYNC_LIMIT: 2
       ZOOKEEPER_SERVERS: localhost:33477:33478
     ports:
-    - "33472/tcp:33472/tcp"
+    - "33472:33472"
     restart: always
   kafka_01:
     image: confluentinc/cp-kafka:3.1.0
@@ -25,11 +25,11 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
     ports:
-    - "9092/tcp:9092/tcp"
+    - "9092:9092"
     restart: always
   cas_01_test:
     image: cassandra:2.1
     ports:
-      - "9042/tcp:9042/tcp"
-      - "7199/tcp:7199/tcp"
+      - "9042:9042"
+      - "7199:7199"
     container_name: cas_01_test
