@@ -7,8 +7,8 @@ scalaVersion := "2.11.8"
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= {
-  val sparkV = "2.1.0"
-  val cassandraV = "2.0.0-M3"
+  val sparkV = "2.2.0"
+  val cassandraV = "2.0.5"
   Seq(
     "org.apache.spark" %% "spark-core" % sparkV,
     "org.apache.spark" %% "spark-streaming" % sparkV,
@@ -17,19 +17,15 @@ libraryDependencies ++= {
     "org.apache.spark" %% "spark-sql" % sparkV,
     "org.apache.spark" %% "spark-hive" % sparkV,
     "com.datastax.spark" %% "spark-cassandra-connector" % cassandraV,
-    "org.scalatest" %% "scalatest" % "3.0.0" % "test",
-    "com.holdenkarau" %% "spark-testing-base" % "2.0.0_0.4.4",
-    "com.datastax.cassandra" % "cassandra-driver-core" % "3.1.2",
-    "com.google.guava" % "guava" % "19.0"
+    "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+    "com.github.nscala-time" %% "nscala-time" % "2.12.0",
+    "com.typesafe" % "config" % "1.3.1",
+    "com.holdenkarau" %% "spark-testing-base" % "2.2.0_0.7.2",
+    "com.datastax.cassandra" % "cassandra-driver-core" % "3.3.0"
   )
 }
 
-parallelExecution in Test := false
-
-javaOptions ++= Seq("-Xms512M",
-                    "-Xmx2048M",
-                    "-XX:MaxPermSize=2048M",
-                    "-XX:+CMSClassUnloadingEnabled")
+mainClass in (Compile, run) :=  Some("com.kafkaToSparkToCass.Main")
 
 mainClass in assembly := Some("com.kafkaToSparkToCass.Main")
 
