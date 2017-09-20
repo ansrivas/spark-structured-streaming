@@ -33,6 +33,7 @@ object Main {
     } catch {
       case ex: Exception =>
         logger.error(ex.getMessage)
+        logger.error(ex.getStackTrace.toString)
     }
   }
 }
@@ -43,7 +44,7 @@ class SparkJob extends Serializable {
   logger.setLevel(Level.INFO)
   val sparkSession =
     SparkSession.builder
-      .master("local[2]")
+      .master("local[*]")
       .appName("kafka2Spark2Cassandra")
       .config("spark.cassandra.connection.host", "localhost")
       .getOrCreate()
@@ -64,7 +65,6 @@ class SparkJob extends Serializable {
   def runJob() = {
 
     logger.info("Execution started with following configuration")
-
     val cols = List("user_id", "time", "event")
 
     import sparkSession.implicits._
@@ -72,7 +72,7 @@ class SparkJob extends Serializable {
       .format("kafka")
       .option("subscribe", "test.1")
       .option("kafka.bootstrap.servers", "localhost:9092")
-      .option("startingOffsets", "latest")
+      .option("startingOffsets", "earliest")
       .load()
       .selectExpr("CAST(value AS STRING)",
                   "CAST(topic as STRING)",
