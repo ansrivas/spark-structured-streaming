@@ -20,12 +20,11 @@ object Main {
 
   def main(args: Array[String]) {
 
-    Logger.getLogger("org").setLevel(Level.WARN)
-    Logger.getLogger("akka").setLevel(Level.WARN)
-    Logger.getLogger("com.datastax").setLevel(Level.WARN)
+    Logger.getLogger("org").setLevel(Level.INFO)
+    Logger.getLogger("akka").setLevel(Level.INFO)
+    Logger.getLogger("com.datastax").setLevel(Level.INFO)
     Logger.getLogger("kafka").setLevel(Level.WARN)
 
-    logger.setLevel(Level.INFO)
 
     val sparkJob = new SparkJob()
     try {
@@ -72,7 +71,7 @@ class SparkJob extends Serializable {
       .format("kafka")
       .option("subscribe", "test.1")
       .option("kafka.bootstrap.servers", "localhost:9092")
-      .option("startingOffsets", "earliest")
+      //.option("startingOffsets", "earliest")
       .load()
       .selectExpr("CAST(value AS STRING)",
                   "CAST(topic as STRING)",

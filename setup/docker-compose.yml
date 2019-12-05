@@ -1,8 +1,8 @@
-version: '2'
+version: '3.5'
 services:
-  zk4kafka_01:
-    image: confluentinc/cp-zookeeper:3.1.0
-    container_name: zk4kafka_01
+  zk4kafka:
+    image: confluentinc/cp-zookeeper:5.3.1
+    container_name: zk4kafka
     environment:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 33472
@@ -13,22 +13,25 @@ services:
     ports:
     - "33472:33472"
     restart: always
-  kafka_01:
-    image: confluentinc/cp-kafka:3.1.0
-    container_name: kafka_01
+  kafka:
+    image: confluentinc/cp-kafka:5.3.1
+    container_name: kafka
     depends_on:
-      - zk4kafka_01
+      - zk4kafka
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zk4kafka_01:33472
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ZOOKEEPER_CONNECT: zk4kafka:33472
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
     ports:
     - "9092:9092"
     restart: always
   cas_01_test:
-    image: cassandra:2.1
+    image: cassandra:3
     ports:
       - "9042:9042"
       - "7199:7199"

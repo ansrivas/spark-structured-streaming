@@ -1,1 +1,2 @@
-pykafka
+librdkafka
+confluent_kafka

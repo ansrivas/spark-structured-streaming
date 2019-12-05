@@ -17,8 +17,9 @@ project/plugins/project/
 .worksheet
 *.pyc
 
+
 # Intellij specific
-#
+.idea
 
 User-specific stuff:
 .idea/workspace.xml
